@@ -6,7 +6,8 @@ internal class Program
     {
         if (args.Length == 1 && args[0] == "-h")
         {
-            Console.WriteLine("Usage: MeteorlogAggregator.exe SOURCE_FOLDER_PATH DESTINATION_FOLDER_PATH");
+            Console.WriteLine("Usage: MeteorlogAggregator.exe SOURCE_FOLDER_PATH DESTINATION_FOLDER_PATH [-o]");
+            Console.WriteLine("-o means it accepts to override RMOB_YYYYMM.dat");
             return;
         }
 
@@ -23,6 +24,17 @@ internal class Program
         // Construct the input and output file names
         string inputFilePath  = Path.Combine(args[0], $"MeteorLog-{currentYear}{currentMonth}.dat");
         string outputFilePath = Path.Combine(args[1], $"RMOB-{currentYear}{currentMonth}.dat");
+        string speclabFilePath = Path.Combine(args[0], $"RMOB-{currentYear}{currentMonth}.dat");
+
+        if (speclabFilePath == outputFilePath)
+        {
+            Console.WriteLine("Error! The output directory is the same as the input. It will overwrite RMOB-YYYYMM.dat!");
+            if(args.Length <= 2 || args[2] != "-o")
+            {
+                Console.WriteLine("To enable override, use -o flag! Exit...");
+                return;
+            }
+        }
 
         Console.WriteLine($"Source: {inputFilePath}, Dest: {outputFilePath}");
 
@@ -32,6 +44,8 @@ internal class Program
             Console.WriteLine($"Input file {inputFilePath} does not exist.");
             return;
         }
+
+        var existingHours = _getExistingHours(speclabFilePath);
 
         // Read all lines from the input CSV file
         var lines = File.ReadAllLines(inputFilePath);
@@ -85,12 +99,45 @@ internal class Program
                 string hourPart = hour.Substring(8, 2);
                 int count = hourCounts.ContainsKey(hour) ? hourCounts[hour] : 0;
 
-                string outputLine = $"{day}{hourPart} , {hourPart} , {count:D2}";
-                writer.WriteLine(outputLine);
+                if (existingHours.Contains(hour) || count > 0)
+                {
+                    string outputLine = $"{day}{hourPart} , {hourPart} , {count:D2}";
+                    writer.WriteLine(outputLine);
+                } else
+                {
+                    Console.WriteLine($"No data: {hour}");
+                }
             }
         }
 
         Console.WriteLine("Processing completed. Output written to " + outputFilePath);
 
+    }
+
+    /// <summary>
+    /// Reads the RMOB dat file for existing Speclab measurements. 
+    /// </summary>
+    /// <param name="rmobInputPath"></param>
+    /// <returns></returns>
+    private static HashSet<string> _getExistingHours(string rmobInputPath)
+    {
+        var res = new HashSet<string>();
+        try
+        {
+            var lines = File.ReadAllLines(rmobInputPath);
+            foreach (var line in lines)
+            {
+                if (line.Length == 0 || !line.Contains(" , "))
+                    continue;
+
+                string dateTimeString = line.Split(" , ")[0];
+                res.Add(dateTimeString);
+            }
+        } 
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex);
+        }
+        return res;
     }
 }
