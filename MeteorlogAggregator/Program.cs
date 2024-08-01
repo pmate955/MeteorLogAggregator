@@ -18,12 +18,37 @@ internal class Program
         }
 
         // Determine the current year and month
-        string currentYear  = DateTime.Now.ToString("yyyy");
-        string currentMonth = DateTime.Now.ToString("MM");
+        var currDate = DateTime.UtcNow;        
+        string currentYear  = currDate.ToString("yyyy");
+        string currentMonth = currDate.ToString("MM");
+
+        // Check the output directory
+        if (!Directory.Exists(args[1]))
+        {
+            Console.WriteLine("Output directory not exists, I create it!");
+            Directory.CreateDirectory(args[1]);
+        }
+
+        // We create the next month RMOB file for the colorgramme lab, because of local time.
+        if (currDate.Day == DateTime.DaysInMonth(currDate.Year, currDate.Month))
+        {
+            var nextMonth = currDate.AddDays(1);
+            var nextMonthFileName = Path.Combine(args[1], $"RMOB-{nextMonth.ToString("yyyy")}{nextMonth.ToString("MM")}.dat");
+            Console.WriteLine($"Check next month file. {nextMonthFileName}");
+            if(!File.Exists(nextMonthFileName))
+            {
+                Console.WriteLine("Created!");
+                File.Create(nextMonthFileName);
+            }
+            else
+            {
+                Console.WriteLine("File exists already");
+            }
+        }
 
         // Construct the input and output file names
-        string inputFilePath  = Path.Combine(args[0], $"MeteorLog-{currentYear}{currentMonth}.dat");
-        string outputFilePath = Path.Combine(args[1], $"RMOB-{currentYear}{currentMonth}.dat");
+        string inputFilePath   = Path.Combine(args[0], $"MeteorLog-{currentYear}{currentMonth}.dat");
+        string outputFilePath  = Path.Combine(args[1], $"RMOB-{currentYear}{currentMonth}.dat");
         string speclabFilePath = Path.Combine(args[0], $"RMOB-{currentYear}{currentMonth}.dat");
 
         if (speclabFilePath == outputFilePath)
@@ -75,19 +100,12 @@ internal class Program
 
         // Determine the range of dates in the given month
         var firstDate = new DateTime(int.Parse(currentYear), int.Parse(currentMonth), 1);
-        var lastDate = DateTime.UtcNow;
-
+        
         // Generate all hour keys for the given month
         List<string> allHours = new List<string>();
-        for (DateTime date = firstDate; date <= lastDate; date = date.AddHours(1))
+        for (DateTime date = firstDate; date <= currDate; date = date.AddHours(1))
         {
             allHours.Add(date.ToString("yyyyMMddHH"));
-        }
-
-        if (!Directory.Exists(args[1]))
-        {
-            Console.WriteLine("Directory not exists, I create it!");
-            Directory.CreateDirectory(args[1]);
         }
 
         // Write the output to the output DAT file
