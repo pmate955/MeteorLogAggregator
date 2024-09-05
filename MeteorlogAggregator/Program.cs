@@ -211,7 +211,8 @@ internal class Program
             }
         }
 
-        File.Copy(outputFilePath, outputBackupFilePath);
+        if (currDate.Minute >= 50)
+            File.Copy(outputFilePath, outputBackupFilePath);
 
         Console.WriteLine("Processing completed. Output written to " + outputFilePath);
     }
