@@ -165,6 +165,7 @@ internal class Program
         {
             var parts = line.Split(',');
             string datetimeString = parts[0];
+            var centerFreq = Convert.ToDecimal(parts[4].Replace(".", ","));
 
             // Parse the datetime string
             DateTime datetime = DateTime.ParseExact(datetimeString, "yyyyMMdd HHmmss", CultureInfo.InvariantCulture);
@@ -175,6 +176,12 @@ internal class Program
             if (!hourCounts.ContainsKey(hourKey))
             {
                 hourCounts[hourKey] = 0;
+            }
+
+            if (centerFreq < 1200 || centerFreq > 1250)
+            {
+                Console.WriteLine($"{datetimeString} Outside of the frequency! {centerFreq} Hz");
+                continue;
             }
 
             hourCounts[hourKey]++;
