@@ -83,9 +83,9 @@ namespace MeteorlogAggregator
         public static void OriginalAggregation(string[] args)
         {
             // Determine the current year and month
-            var currDate = DateTime.UtcNow;
-            string currentYear = currDate.ToString("yyyy");
-            string currentMonth = currDate.ToString("MM");
+            var currDateTime = DateTime.UtcNow;
+            string currentYear = currDateTime.ToString("yyyy");
+            string currentMonth = currDateTime.ToString("MM");
 
             // Check the output directory
             if (!Directory.Exists(args[1]))
@@ -95,9 +95,9 @@ namespace MeteorlogAggregator
             }
 
             // We create the next month RMOB file for the colorgramme lab, because of local time.
-            if (currDate.Day == DateTime.DaysInMonth(currDate.Year, currDate.Month))
+            if (currDateTime.Day == DateTime.DaysInMonth(currDateTime.Year, currDateTime.Month))
             {
-                var nextMonth = currDate.AddDays(1);
+                var nextMonth = currDateTime.AddDays(1);
                 var nextMonthFileName = Path.Combine(args[1], $"RMOB-{nextMonth.ToString("yyyy")}{nextMonth.ToString("MM")}.dat");
                 Console.WriteLine($"Check next month file. {nextMonthFileName}");
                 if (!File.Exists(nextMonthFileName))
@@ -120,9 +120,10 @@ namespace MeteorlogAggregator
             if (speclabFilePath == outputFilePath)
             {
                 Console.WriteLine("Error! The output directory is the same as the input. It will overwrite RMOB-YYYYMM.dat!");
+
                 if (args.Length <= 2 || args[2] != "-o")
                 {
-                    Console.WriteLine("To enable override, use -o flag! Exit...");
+                    ErrorHandling.Handle("To enable override, use -o flag! Exit...");
                     return;
                 }
             }
@@ -132,7 +133,7 @@ namespace MeteorlogAggregator
             // Check if input file exists
             if (!File.Exists(inputFilePath))
             {
-                Console.WriteLine($"Input file {inputFilePath} does not exist.");
+                ErrorHandling.Handle($"Input file {inputFilePath} does not exist.");
                 return;
             }
 
@@ -176,10 +177,12 @@ namespace MeteorlogAggregator
 
             // Generate all hour keys for the given month
             List<string> allHours = new List<string>();
-            for (DateTime date = firstDate; date <= currDate; date = date.AddHours(1))
+            for (DateTime date = firstDate; date <= currDateTime; date = date.AddHours(1))
             {
                 allHours.Add(date.ToString("yyyyMMddHH"));
             }
+
+            string prevHour = currDateTime.AddHours(-1).ToString("yyyyMMddHH");
 
             // Write the output to the output DAT file
             using (var writer = new StreamWriter(outputFilePath))
@@ -197,12 +200,16 @@ namespace MeteorlogAggregator
                     }
                     else
                     {
+                        if (hour == prevHour)
+                        {
+                            DiscordBot.SendMessage("There were no detections in the previous hour. Please check the SDR and Spectrumlab app!").Wait();
+                        }
                         Console.WriteLine($"No data: {hour}");
                     }
                 }
             }
 
-            if (currDate.Minute >= 50)
+            if (currDateTime.Minute >= 50)
                 File.Copy(outputFilePath, outputBackupFilePath);
 
             Console.WriteLine("Processing completed. Output written to " + outputFilePath);
@@ -230,7 +237,7 @@ namespace MeteorlogAggregator
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                ErrorHandling.Handle("Error: " + ex.Message);
             }
 
             return res;

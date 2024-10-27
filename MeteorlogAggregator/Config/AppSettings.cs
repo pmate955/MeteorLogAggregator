@@ -22,6 +22,16 @@ namespace MeteorlogAggregator
         /// </summary>
         public static string BackupFilePrefix { get; private set; }
 
+        /// <summary>
+        /// Send notifications to DC?
+        /// </summary>
+        public static bool UseDiscordBot { get; private set; }
+
+        /// <summary>
+        /// Webhook URL
+        /// </summary>
+        public static string DiscordWebhook { get; private set; }
+
         static AppSettings()
         {
             var path = AppContext.BaseDirectory; 
@@ -32,6 +42,8 @@ namespace MeteorlogAggregator
 
             KeepMaxBackups = Config["AppSettings:KeepMaxBackups"] != null ? Convert.ToInt32(Config["AppSettings:KeepMaxBackups"]) : 10;
             BackupFilePrefix = Config["AppSettings:BackupFilePrefix"] ?? "RMOB-backup-";
+            UseDiscordBot = Config["AppSettings:UseDiscordBot"] != null ? Convert.ToBoolean(Config["AppSettings:UseDiscordBot"]) :  false;
+            DiscordWebhook = Config["AppSettings:DiscordWebhook"] ?? "";
         }
     }
 }

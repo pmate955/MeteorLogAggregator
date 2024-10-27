@@ -5,33 +5,37 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        Console.WriteLine(AppSettings.KeepMaxBackups);
-        Console.WriteLine(AppSettings.BackupFilePrefix);
-
-        if (args.Length == 1 && args[0] == "-h")
+        try
         {
-            Console.WriteLine("Usage: MeteorlogAggregator.exe SOURCE_FOLDER_PATH DESTINATION_FOLDER_PATH [-o]");
-            Console.WriteLine("-o means it accepts to override RMOB_YYYYMM.dat");
-            Console.WriteLine("-i means inverse function. It creates the MeteorLog from RMOB.dat");
-            return;
-        }
+            if (args.Length == 1 && args[0] == "-h")
+            {
+                Console.WriteLine("Usage: MeteorlogAggregator.exe SOURCE_FOLDER_PATH DESTINATION_FOLDER_PATH [-o]");
+                Console.WriteLine("-o means it accepts to override RMOB_YYYYMM.dat");
+                Console.WriteLine("-i means inverse function. It creates the MeteorLog from RMOB.dat");
+                return;
+            }
 
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Not enough parameter. See -h for more details!");
-            return;
-        }
+            if (args.Length < 2)
+            {
+                ErrorHandling.Handle("Not enough parameter. See -h for more details!");                
+                return;
+            }
 
-        if (args.Contains("-i"))
-        {
-            Aggregator.InverseOriginalAggregation(args);
-        }
-        else
-        {
-            Aggregator.OriginalAggregation(args);
-        }
+            if (args.Contains("-i"))
+            {
+                Aggregator.InverseOriginalAggregation(args);
+            }
+            else
+            {
+                Aggregator.OriginalAggregation(args);
+            }
 
-        RemoveBackups(args[1]);
+            RemoveBackups(args[1]);
+        }
+        catch (Exception ex)
+        {
+            ErrorHandling.Handle("Unknown error", ex);
+        }
 
     }
 
