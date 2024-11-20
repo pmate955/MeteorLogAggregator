@@ -163,7 +163,7 @@ namespace MeteorlogAggregator
                     hourCounts[hourKey] = 0;
                 }
 
-                if (centerFreq < 1200 || centerFreq > 1250)
+                if (centerFreq < AppSettings.MinFreq || centerFreq > AppSettings.MaxFreq)
                 {
                     //Console.WriteLine($"{datetimeString} Outside of the frequency! {centerFreq} Hz");
                     continue;
@@ -200,11 +200,12 @@ namespace MeteorlogAggregator
                     }
                     else
                     {
-                        if (hour == prevHour)
-                        {
-                            DiscordBot.SendMessage("There were no detections in the previous hour. Please check the SDR and Spectrumlab app!").Wait();
-                        }
                         Console.WriteLine($"No data: {hour}");
+                    }
+
+                    if (count == 0 && hour == prevHour)
+                    {
+                        DiscordBot.SendMessage("There were no detections in the previous hour. Please check the SDR and Spectrumlab app!").Wait();
                     }
                 }
             }

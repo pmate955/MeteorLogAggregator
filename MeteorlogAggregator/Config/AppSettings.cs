@@ -32,6 +32,16 @@ namespace MeteorlogAggregator
         /// </summary>
         public static string DiscordWebhook { get; private set; }
 
+        /// <summary>
+        /// Min freq (Hz)
+        /// </summary>
+        public static int MinFreq { get; private set; }
+
+        /// <summary>
+        /// Mas freq (Hz)
+        /// </summary>
+        public static int MaxFreq { get; private set; }
+
         static AppSettings()
         {
             var path = AppContext.BaseDirectory; 
@@ -44,6 +54,8 @@ namespace MeteorlogAggregator
             BackupFilePrefix = Config["AppSettings:BackupFilePrefix"] ?? "RMOB-backup-";
             UseDiscordBot = Config["AppSettings:UseDiscordBot"] != null ? Convert.ToBoolean(Config["AppSettings:UseDiscordBot"]) :  false;
             DiscordWebhook = Config["AppSettings:DiscordWebhook"] ?? "";
+            MinFreq = Config["AppSettings:MinFreq"] != null ? Convert.ToInt32(Config["AppSettings:MinFreq"]) : 1150;
+            MaxFreq = Config["AppSettings:MaxFreq"] != null ? Convert.ToInt32(Config["AppSettings:MaxFreq"]) : 1250;
         }
     }
 }
