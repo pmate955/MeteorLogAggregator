@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MeteorlogAggregator": {
+      "commandName": "Project",
+      "commandLineArgs": ". teszt0403"
+    }
+  }
+}

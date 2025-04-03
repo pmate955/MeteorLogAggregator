@@ -7,6 +7,14 @@ internal class Program
     {
         try
         {
+            if (AppSettings.UseAudioDetection)
+            {
+                AudioTester audio = new(AppSettings.AudioDeviceName);
+
+                if (!audio.IsAudio())
+                    DiscordBot.SendMessage("No signal on input device! Check SDRUno!").Wait();
+            }
+
             if (args.Length == 1 && args[0] == "-h")
             {
                 Console.WriteLine("Usage: MeteorlogAggregator.exe SOURCE_FOLDER_PATH DESTINATION_FOLDER_PATH [-o]");

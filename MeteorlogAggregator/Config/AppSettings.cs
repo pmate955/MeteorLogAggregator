@@ -47,6 +47,16 @@ namespace MeteorlogAggregator
         /// </summary>
         public static int NoDetectionThresholdMinutes { get; private set; }
 
+        /// <summary>
+        /// Use audio level check
+        /// </summary>
+        public static bool UseAudioDetection { get; private set; }
+
+        /// <summary>
+        /// Full name or just the part of the audio input device name. Like CABLE as Virtual audio cable
+        /// </summary>
+        public static string AudioDeviceName { get; private set; }
+
         static AppSettings()
         {
             var path = AppContext.BaseDirectory; 
@@ -62,6 +72,8 @@ namespace MeteorlogAggregator
             MinFreq = Config["AppSettings:MinFreq"] != null ? Convert.ToInt32(Config["AppSettings:MinFreq"]) : 1150;
             MaxFreq = Config["AppSettings:MaxFreq"] != null ? Convert.ToInt32(Config["AppSettings:MaxFreq"]) : 1250;
             NoDetectionThresholdMinutes = Config["AppSettings:NoDetectionThresholdMinutes"] != null ? Convert.ToInt32(Config["AppSettings:NoDetectionThresholdMinutes"]) : 20;
+            UseAudioDetection = Config["AppSettings:UseAudioDetection"] != null ? Convert.ToBoolean(Config["AppSettings:UseAudioDetection"]) : false;
+            AudioDeviceName = Config["AppSettings:AudioDeviceName"] ?? "CABLE";
         }
     }
 }
