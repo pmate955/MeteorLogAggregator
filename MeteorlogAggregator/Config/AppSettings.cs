@@ -42,6 +42,11 @@ namespace MeteorlogAggregator
         /// </summary>
         public static int MaxFreq { get; private set; }
 
+        /// <summary>
+        /// If there were no detections in the current hour after this time, it sends notification
+        /// </summary>
+        public static int NoDetectionThresholdMinutes { get; private set; }
+
         static AppSettings()
         {
             var path = AppContext.BaseDirectory; 
@@ -56,6 +61,7 @@ namespace MeteorlogAggregator
             DiscordWebhook = Config["AppSettings:DiscordWebhook"] ?? "";
             MinFreq = Config["AppSettings:MinFreq"] != null ? Convert.ToInt32(Config["AppSettings:MinFreq"]) : 1150;
             MaxFreq = Config["AppSettings:MaxFreq"] != null ? Convert.ToInt32(Config["AppSettings:MaxFreq"]) : 1250;
+            NoDetectionThresholdMinutes = Config["AppSettings:NoDetectionThresholdMinutes"] != null ? Convert.ToInt32(Config["AppSettings:NoDetectionThresholdMinutes"]) : 20;
         }
     }
 }

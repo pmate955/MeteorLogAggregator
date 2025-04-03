@@ -66,7 +66,7 @@ namespace MeteorlogAggregator
 
                     for (int i = 0; i < count; i++)
                     {
-                        string row = $"{dt.ToString("yyyyMMdd HHmmss")},{i + 1},-10,-20,1200,10";
+                        string row = $"{dt:yyyyMMdd HHmmss},{i + 1},-10,-20,1200,10";
                         writer.WriteLine(row);
                         dt = dt.AddSeconds(1);
                     }
@@ -82,7 +82,6 @@ namespace MeteorlogAggregator
         /// <param name="args"></param>
         public static void OriginalAggregation(string[] args)
         {
-            // Determine the current year and month
             var currDateTime = DateTime.UtcNow;
             string currentYear = currDateTime.ToString("yyyy");
             string currentMonth = currDateTime.ToString("MM");
@@ -94,27 +93,12 @@ namespace MeteorlogAggregator
                 Directory.CreateDirectory(args[1]);
             }
 
-            // We create the next month RMOB file for the colorgramme lab, because of local time.
-            if (currDateTime.Day == DateTime.DaysInMonth(currDateTime.Year, currDateTime.Month))
-            {
-                var nextMonth = currDateTime.AddDays(1);
-                var nextMonthFileName = Path.Combine(args[1], $"RMOB-{nextMonth.ToString("yyyy")}{nextMonth.ToString("MM")}.dat");
-                Console.WriteLine($"Check next month file. {nextMonthFileName}");
-                if (!File.Exists(nextMonthFileName))
-                {
-                    Console.WriteLine("Created!");
-                    File.Create(nextMonthFileName);
-                }
-                else
-                {
-                    Console.WriteLine("File exists already");
-                }
-            }
+            CreateFileForNextMonth(args, currDateTime);
 
             // Construct the input and output file names
-            string inputFilePath = Path.Combine(args[0], $"MeteorLog-{currentYear}{currentMonth}.dat");
+            string meteorLogInputFilePath = Path.Combine(args[0], $"MeteorLog-{currentYear}{currentMonth}.dat");
             string outputFilePath = Path.Combine(args[1], $"RMOB-{currentYear}{currentMonth}.dat");
-            string outputBackupFilePath = Path.Combine(args[1], $"{AppSettings.BackupFilePrefix}{DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss")}-{currentYear}{currentMonth}.dat");
+            string outputBackupFilePath = Path.Combine(args[1], $"{AppSettings.BackupFilePrefix}{DateTime.UtcNow:yyyy-MM-dd-HH-mm-ss}-{currentYear}{currentMonth}.dat");
             string speclabFilePath = Path.Combine(args[0], $"RMOB-{currentYear}{currentMonth}.dat");
 
             if (speclabFilePath == outputFilePath)
@@ -128,24 +112,85 @@ namespace MeteorlogAggregator
                 }
             }
 
-            Console.WriteLine($"Source: {inputFilePath}, Dest: {outputFilePath}");
+            Console.WriteLine($"Source: {meteorLogInputFilePath}, Dest: {outputFilePath}");
 
             // Check if input file exists
-            if (!File.Exists(inputFilePath))
+            if (!File.Exists(meteorLogInputFilePath))
             {
-                ErrorHandling.Handle($"Input file {inputFilePath} does not exist.");
+                ErrorHandling.Handle($"Input file {meteorLogInputFilePath} does not exist.");
                 return;
             }
 
-            var existingHours = _getExistingHours(speclabFilePath);
+            var existingHours = GetExistingHours(speclabFilePath);
 
-            // Read all lines from the input CSV file
-            var lines = File.ReadAllLines(inputFilePath);
+            Dictionary<string, int> hourCounts = ReadMeteorLogFile(meteorLogInputFilePath);
 
-            // Dictionary to hold the counts per hour
-            Dictionary<string, int> hourCounts = new Dictionary<string, int>();
+            var firstDate = new DateTime(int.Parse(currentYear), int.Parse(currentMonth), 1);
 
-            // Parse the input lines and count entries per hour
+            // Generate all hour keys for the given month
+            List<string> allHours = new();
+            for (DateTime date = firstDate; date <= currDateTime; date = date.AddHours(1))
+            {
+                allHours.Add(date.ToString("yyyyMMddHH"));
+            }
+
+            ProcessData(currDateTime, outputFilePath, existingHours, hourCounts, allHours);
+
+            // Backup
+            if (currDateTime.Minute >= 50)
+                File.Copy(outputFilePath, outputBackupFilePath);
+
+            Console.WriteLine("Processing completed. Output written to " + outputFilePath);
+        }
+
+        /// <summary>
+        /// It processes all the data, and writes to <paramref name="outputFilePath"/> 
+        /// </summary>
+        /// <param name="currDateTime">Current date and time for aggregation. UTC!</param>
+        /// <param name="outputFilePath">Result RMOB.dat path</param>
+        /// <param name="existingHours">DateTime in yyyyMMddHH format, which ones are in Speclab's RMOB.dat</param>
+        /// <param name="hourCounts">Data from MeteorLog file grouped to yyyyMMddHH dates</param>
+        /// <param name="allHours">All datetime in yyyyMMddHH format </param>
+        private static void ProcessData(DateTime currDateTime, string outputFilePath, HashSet<string> existingHours, Dictionary<string, int> hourCounts, List<string> allHours)
+        {
+            string currentHour = currDateTime.ToString("yyyyMMddHH");
+
+            // Write the output to the output DAT file
+            using StreamWriter writer = new(outputFilePath);
+            foreach (var hour in allHours)
+            {
+                string day = hour[..8];
+                string hourPart = hour.Substring(8, 2);
+                int count = hourCounts.ContainsKey(hour) ? hourCounts[hour] : 0;
+
+                if (existingHours.Contains(hour) || count > 0)
+                {
+                    string outputLine = $"{day}{hourPart} , {hourPart} , {count:D2}";
+                    writer.WriteLine(outputLine);
+                }
+                else
+                {
+                    Console.WriteLine($"No data: {hour}");
+                }
+
+                if (count == 0 && hour == currentHour && currDateTime.Minute >= AppSettings.NoDetectionThresholdMinutes)
+                {
+                    DiscordBot.SendMessage("There were no detections in the current hour. Please check the SDR and Spectrumlab app!").Wait();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Read all lines from the input CSV file
+        /// </summary>
+        /// <param name="meteorLogInputFilePath"></param>
+        /// <returns></returns>
+        private static Dictionary<string, int> ReadMeteorLogFile(string meteorLogInputFilePath)
+        {
+            var lines = File.ReadAllLines(meteorLogInputFilePath);
+
+            Dictionary<string, int> hourCounts = new();
+
             foreach (var line in lines)
             {
                 var parts = line.Split(',');
@@ -172,48 +217,32 @@ namespace MeteorlogAggregator
                 hourCounts[hourKey]++;
             }
 
-            // Determine the range of dates in the given month
-            var firstDate = new DateTime(int.Parse(currentYear), int.Parse(currentMonth), 1);
+            return hourCounts;
+        }
 
-            // Generate all hour keys for the given month
-            List<string> allHours = new List<string>();
-            for (DateTime date = firstDate; date <= currDateTime; date = date.AddHours(1))
+        /// <summary>
+        /// We create the next month RMOB file for the colorgramme lab, because of local time.
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="currDateTime"></param>
+        private static void CreateFileForNextMonth(string[] args, DateTime currDateTime)
+        {
+            if (currDateTime.Day == DateTime.DaysInMonth(currDateTime.Year, currDateTime.Month))
             {
-                allHours.Add(date.ToString("yyyyMMddHH"));
-            }
+                var nextMonth = currDateTime.AddDays(1);
+                var nextMonthFileName = Path.Combine(args[1], $"RMOB-{nextMonth:yyyy}{nextMonth:MM}.dat");
+                Console.WriteLine($"Check next month file. {nextMonthFileName}");
 
-            string prevHour = currDateTime.AddHours(-1).ToString("yyyyMMddHH");
-
-            // Write the output to the output DAT file
-            using (var writer = new StreamWriter(outputFilePath))
-            {
-                foreach (var hour in allHours)
+                if (!File.Exists(nextMonthFileName))
                 {
-                    string day = hour.Substring(0, 8);
-                    string hourPart = hour.Substring(8, 2);
-                    int count = hourCounts.ContainsKey(hour) ? hourCounts[hour] : 0;
-
-                    if (existingHours.Contains(hour) || count > 0)
-                    {
-                        string outputLine = $"{day}{hourPart} , {hourPart} , {count:D2}";
-                        writer.WriteLine(outputLine);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No data: {hour}");
-                    }
-
-                    if (count == 0 && hour == prevHour)
-                    {
-                        DiscordBot.SendMessage("There were no detections in the previous hour. Please check the SDR and Spectrumlab app!").Wait();
-                    }
+                    Console.WriteLine("Created!");
+                    File.Create(nextMonthFileName);
+                }
+                else
+                {
+                    Console.WriteLine("File exists already");
                 }
             }
-
-            if (currDateTime.Minute >= 50)
-                File.Copy(outputFilePath, outputBackupFilePath);
-
-            Console.WriteLine("Processing completed. Output written to " + outputFilePath);
         }
 
         /// <summary>
@@ -221,7 +250,7 @@ namespace MeteorlogAggregator
         /// </summary>
         /// <param name="rmobInputPath"></param>
         /// <returns></returns>
-        private static HashSet<string> _getExistingHours(string rmobInputPath)
+        private static HashSet<string> GetExistingHours(string rmobInputPath)
         {
             var res = new HashSet<string>();
             try
@@ -235,6 +264,10 @@ namespace MeteorlogAggregator
                     string dateTimeString = line.Split(" , ")[0];
                     res.Add(dateTimeString);
                 }
+            }
+            catch (FileNotFoundException ex)
+            {
+                Console.WriteLine($"Nem található az RMOB fájl! {ex.Message}" );
             }
             catch (Exception ex)
             {
