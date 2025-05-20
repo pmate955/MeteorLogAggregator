@@ -2,7 +2,63 @@
 
 internal class Program
 {
-    private static void Main(string[] args)
+    public static async Task Main(string[] args)
+    {
+        if (args.Contains("-t"))
+        {
+            int position = Array.FindIndex(args, arg => arg == "-t");
+            int period = Convert.ToInt32(args[position + 1]);
+
+            using var cts = new CancellationTokenSource();
+
+            // Ctrl+C 
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                Console.WriteLine("Stopping...");
+                cts.Cancel();
+                e.Cancel = true; 
+            };
+
+            Console.WriteLine("Starting... Ctrl+C-vel to exit.");
+
+            await ThreadedAggregation(args, period, cts.Token);
+
+            Console.WriteLine("Main ended");
+        }
+        else
+        {
+            DoAggregation(args);
+        }
+
+    }
+
+    private static async Task ThreadedAggregation(string[] args, int period, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            Console.WriteLine("Start Threaded aggregation");
+
+            try
+            {
+                DoAggregation(args);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Something went wrong during aggregation. {ex.Message}");
+            }
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(period), token);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
+        }
+    }
+
+    private static void DoAggregation(string[] args)
     {
         try
         {
@@ -19,12 +75,13 @@ internal class Program
                 Console.WriteLine("Usage: MeteorlogAggregator.exe SOURCE_FOLDER_PATH DESTINATION_FOLDER_PATH [-o]");
                 Console.WriteLine("-o means it accepts to override RMOB_YYYYMM.dat");
                 Console.WriteLine("-i means inverse function. It creates the MeteorLog from RMOB.dat");
+                Console.WriteLine("-t [sec] Threaded mode");
                 return;
             }
 
             if (args.Length < 2)
             {
-                ErrorHandling.Handle("Not enough parameter. See -h for more details!");                
+                ErrorHandling.Handle("Not enough parameter. See -h for more details!");
                 return;
             }
 
@@ -47,7 +104,6 @@ internal class Program
         {
             ErrorHandling.Handle("Unknown error", ex);
         }
-
     }
 
     /// <summary>

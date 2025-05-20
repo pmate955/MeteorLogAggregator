@@ -2,7 +2,7 @@
   "profiles": {
     "MeteorlogAggregator": {
       "commandName": "Project",
-      "commandLineArgs": ". teszt0403"
+      "commandLineArgs": ". teszt0403 -t 10"
     }
   }
 }

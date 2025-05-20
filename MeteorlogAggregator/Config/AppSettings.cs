@@ -56,7 +56,7 @@ namespace MeteorlogAggregator
         /// Full name or just the part of the audio input device name. Like CABLE as Virtual audio cable
         /// </summary>
         public static string AudioDeviceName { get; private set; }
-
+           
         static AppSettings()
         {
             var path = AppContext.BaseDirectory; 

@@ -9,6 +9,7 @@ Flags:
 -h --- HELP menu
 -o --- Enable to override RMOB-YYYYMM.dat, when the input path is the same as the output path. 
 -i --- Inverse aggregation function: RMOB-YYYYMM.dat -> MeteorLog. It can be used to restore the data with some losses, like frequency, etc.
+-t [sec] --- Thread mode for service use. The app will not stop, and do the aggregation periodically in the given [sec] parameter.
 ```
 
 ## JSON Config
