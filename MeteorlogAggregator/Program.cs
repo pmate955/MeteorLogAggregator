@@ -1,5 +1,4 @@
 ﻿using MeteorlogAggregator;
-using System.Globalization;
 
 internal class Program
 {
@@ -11,7 +10,7 @@ internal class Program
             {
                 AudioTester audio = new(AppSettings.AudioDeviceName);
 
-                if (!audio.IsAudio())
+                if (!audio.IsAudioSignal())
                     DiscordBot.SendMessage("No signal on input device! Check SDRUno!").Wait();
             }
 
@@ -29,16 +28,20 @@ internal class Program
                 return;
             }
 
+            string inputPath = args[0];
+            string outputPath = args[1];
+            bool isOverrideEnabled = args.Contains("-o");
+
             if (args.Contains("-i"))
             {
-                Aggregator.InverseOriginalAggregation(args);
+                Aggregator.InverseOriginalAggregation(inputPath, outputPath, isOverrideEnabled);
             }
             else
             {
-                Aggregator.OriginalAggregation(args);
+                Aggregator.OriginalAggregation(inputPath, outputPath, isOverrideEnabled);
             }
 
-            RemoveBackups(args[1]);
+            RemoveBackups(outputPath);
         }
         catch (Exception ex)
         {

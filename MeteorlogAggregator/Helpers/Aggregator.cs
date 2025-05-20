@@ -10,7 +10,7 @@ namespace MeteorlogAggregator
     class Aggregator
     {
         // RMOB.dat -> Meteorlog (lossy, but works if something bad happened)
-        public static void InverseOriginalAggregation(string[] args)
+        public static void InverseOriginalAggregation(string inputPath, string outputPath, bool isOverrideEnabled)
         {
             // Determine the current year and month
             var currDate = DateTime.UtcNow;
@@ -18,20 +18,20 @@ namespace MeteorlogAggregator
             string currentMonth = currDate.ToString("MM");
 
             // Check the output directory
-            if (!Directory.Exists(args[1]))
+            if (!Directory.Exists(outputPath))
             {
                 Console.WriteLine("Output directory not exists, I create it!");
-                Directory.CreateDirectory(args[1]);
+                Directory.CreateDirectory(outputPath);
             }
 
             // Construct the input and output file names
-            string outLogPath = Path.Combine(args[1], $"MeteorLog-{currentYear}{currentMonth}.dat");
-            string inputFilePath = Path.Combine(args[0], $"RMOB-{currentYear}{currentMonth}.dat");
+            string outLogPath = Path.Combine(outputPath, $"MeteorLog-{currentYear}{currentMonth}.dat");
+            string inputFilePath = Path.Combine(inputPath, $"RMOB-{currentYear}{currentMonth}.dat");
 
             if (outLogPath == inputFilePath)
             {
                 Console.WriteLine("Error! The output directory is the same as the input. It will overwrite RMOB-YYYYMM.dat!");
-                if (!args.Contains("-o"))
+                if (!isOverrideEnabled)
                 {
                     Console.WriteLine("To enable override, use -o flag! Exit...");
                     return;
@@ -80,32 +80,32 @@ namespace MeteorlogAggregator
         /// Meteorlog -> RMOB.dat
         /// </summary>
         /// <param name="args"></param>
-        public static void OriginalAggregation(string[] args)
+        public static void OriginalAggregation(string inputPath, string outputPath, bool isOverrideEnabled)
         {
             var currDateTime = DateTime.UtcNow;
             string currentYear = currDateTime.ToString("yyyy");
             string currentMonth = currDateTime.ToString("MM");
 
             // Check the output directory
-            if (!Directory.Exists(args[1]))
+            if (!Directory.Exists(outputPath))
             {
                 Console.WriteLine("Output directory not exists, I create it!");
-                Directory.CreateDirectory(args[1]);
+                Directory.CreateDirectory(outputPath);
             }
 
-            CreateFileForNextMonth(args, currDateTime);
+            CreateFileForNextMonth(outputPath, currDateTime);
 
             // Construct the input and output file names
-            string meteorLogInputFilePath = Path.Combine(args[0], $"MeteorLog-{currentYear}{currentMonth}.dat");
-            string outputFilePath = Path.Combine(args[1], $"RMOB-{currentYear}{currentMonth}.dat");
-            string outputBackupFilePath = Path.Combine(args[1], $"{AppSettings.BackupFilePrefix}{DateTime.UtcNow:yyyy-MM-dd-HH-mm-ss}-{currentYear}{currentMonth}.dat");
-            string speclabFilePath = Path.Combine(args[0], $"RMOB-{currentYear}{currentMonth}.dat");
+            string meteorLogInputFilePath = Path.Combine(inputPath, $"MeteorLog-{currentYear}{currentMonth}.dat");
+            string outputFilePath = Path.Combine(outputPath, $"RMOB-{currentYear}{currentMonth}.dat");
+            string outputBackupFilePath = Path.Combine(outputPath, $"{AppSettings.BackupFilePrefix}{DateTime.UtcNow:yyyy-MM-dd-HH-mm-ss}-{currentYear}{currentMonth}.dat");
+            string speclabFilePath = Path.Combine(inputPath, $"RMOB-{currentYear}{currentMonth}.dat");
 
             if (speclabFilePath == outputFilePath)
             {
                 Console.WriteLine("Error! The output directory is the same as the input. It will overwrite RMOB-YYYYMM.dat!");
 
-                if (args.Length <= 2 || args[2] != "-o")
+                if (!isOverrideEnabled)
                 {
                     ErrorHandling.Handle("To enable override, use -o flag! Exit...");
                     return;
@@ -223,14 +223,14 @@ namespace MeteorlogAggregator
         /// <summary>
         /// We create the next month RMOB file for the colorgramme lab, because of local time.
         /// </summary>
-        /// <param name="args"></param>
+        /// <param name="outputPath">Path for the output</param>
         /// <param name="currDateTime"></param>
-        private static void CreateFileForNextMonth(string[] args, DateTime currDateTime)
+        private static void CreateFileForNextMonth(string outputPath, DateTime currDateTime)
         {
             if (currDateTime.Day == DateTime.DaysInMonth(currDateTime.Year, currDateTime.Month))
             {
                 var nextMonth = currDateTime.AddDays(1);
-                var nextMonthFileName = Path.Combine(args[1], $"RMOB-{nextMonth:yyyy}{nextMonth:MM}.dat");
+                var nextMonthFileName = Path.Combine(outputPath, $"RMOB-{nextMonth:yyyy}{nextMonth:MM}.dat");
                 Console.WriteLine($"Check next month file. {nextMonthFileName}");
 
                 if (!File.Exists(nextMonthFileName))

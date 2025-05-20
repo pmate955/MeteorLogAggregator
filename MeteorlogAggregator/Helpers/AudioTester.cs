@@ -25,7 +25,7 @@ namespace MeteorlogAggregator
         /// Check the Audio device if there is any signal on it.
         /// </summary>
         /// <returns></returns>
-        public bool IsAudio()
+        public bool IsAudioSignal()
         {
             int? deviceIndex = this.FindInputDeviceIndex();
 
