@@ -56,6 +56,16 @@ namespace MeteorlogAggregator
         /// Full name or just the part of the audio input device name. Like CABLE as Virtual audio cable
         /// </summary>
         public static string AudioDeviceName { get; private set; }
+
+        /// <summary>
+        /// If true, we restart the SdrUno if there is no audio
+        /// </summary>
+        public static bool IsSdrUnoRestart { get; private set; }    
+
+        /// <summary>
+        /// Path of the SdrUno.exe
+        /// </summary>
+        public static string SdrUnoPath { get; private set; }
            
         static AppSettings()
         {
@@ -74,6 +84,8 @@ namespace MeteorlogAggregator
             NoDetectionThresholdMinutes = Config["AppSettings:NoDetectionThresholdMinutes"] != null ? Convert.ToInt32(Config["AppSettings:NoDetectionThresholdMinutes"]) : 20;
             UseAudioDetection = Config["AppSettings:UseAudioDetection"] != null ? Convert.ToBoolean(Config["AppSettings:UseAudioDetection"]) : false;
             AudioDeviceName = Config["AppSettings:AudioDeviceName"] ?? "CABLE";
+            IsSdrUnoRestart = Config["AppSettings:IsSdrUnoRestart"] != null ? Convert.ToBoolean(Config["AppSettings:IsSdrUnoRestart"]) : false;
+            SdrUnoPath = Config["AppSettings:SdrUnoPath"] ?? "C:\\Program Files (x86)\\SDRplay\\SDRuno\\SDRuno.exe";
         }
     }
 }

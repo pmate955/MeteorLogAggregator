@@ -67,7 +67,21 @@ internal class Program
                 AudioTester audio = new(AppSettings.AudioDeviceName);
 
                 if (!audio.IsAudioSignal())
+                {
                     DiscordBot.SendMessage("No signal on input device! Check SDRUno!").Wait();
+
+                    if (AppSettings.IsSdrUnoRestart)
+                    {
+                        SdrRestarter.Restart();
+
+                        Thread.Sleep(5000);
+
+                        if (!audio.IsAudioSignal())
+                        {
+                            DiscordBot.SendMessage("No signal after restart! Please check manually!").Wait();
+                        }
+                    }
+                }
             }
 
             if (args.Length == 1 && args[0] == "-h")
